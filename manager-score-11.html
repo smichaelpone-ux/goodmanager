@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Good Manager Score</title>
+
+<!-- PWA -->
+<meta name="theme-color" content="#0a0d13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GMS">
+<link rel="manifest" href="./manifest.json">
+
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d13;
+    --surface: #111520;
+    --card: #161b27;
+    --border: #232a3a;
+    --border-hover: #2e3850;
+
+    /* Google brand palette */
+    --g-blue: #4285F4;
+    --g-red: #EA4335;
+    --g-yellow: #FBBC04;
+    --g-green: #34A853;
+
+    --g-blue-dim: rgba(66,133,244,0.13);
+    --g-blue-mid: rgba(66,133,244,0.35);
+    --g-green-dim: rgba(52,168,83,0.13);
+    --g-red-dim: rgba(234,67,53,0.13);
+    --g-yellow-dim: rgba(251,188,4,0.13);
+
+    --accent: var(--g-blue);
+    --accent-dim: var(--g-blue-dim);
+    --accent-mid: var(--g-blue-mid);
+    --text: #e8edf5;
+    --text-muted: #7a8499;
+    --text-dim: #3d4659;
+    --danger: var(--g-red);
+    --warn: var(--g-yellow);
+    --good: var(--g-green);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 17px;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid bg */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(66,133,244,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(66,133,244,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 16px;
+  }
+
+  .header-left .wordmark {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: clamp(30px, 6vw, 44px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .header-left p {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.2px;
+  }
+
+  .week-badge {
+    background: var(--g-blue-dim);
+    border: 1px solid var(--g-blue-mid);
+    border-radius: 8px;
+    padding: 10px 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .week-badge .wk-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--g-blue);
+    font-weight: 500;
+    font-family: 'Google Sans', sans-serif;
+  }
+
+  .week-badge .wk-val {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  /* Score ring */
+  .score-ring-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-ring-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(to right, var(--g-blue) 25%, var(--g-red) 25% 50%, var(--g-yellow) 50% 75%, var(--g-green) 75%);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .ring-svg {
+    flex-shrink: 0;
+    width: 110px; height: 110px;
+    transform: rotate(-90deg);
+  }
+
+  .ring-track { fill: none; stroke: var(--border); stroke-width: 7; }
+  .ring-fill {
+    fill: none;
+    stroke: var(--g-blue);
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.4s ease;
+    stroke-dasharray: 314;
+    stroke-dashoffset: 314;
+  }
+
+  .ring-container {
+    position: relative;
+    width: 110px; height: 110px;
+    flex-shrink: 0;
+  }
+
+  .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .ring-text .score-num {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--g-blue);
+    line-height: 1;
+    transition: color 0.4s;
+  }
+
+  .ring-text .score-denom {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-weight: 400;
+  }
+
+  .score-left-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .score-right-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 1px solid var(--border);
+    padding-left: 16px;
+    min-width: 0;
+  }
+
+  .score-label {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .score-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .score-bars {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 36px;
+    margin-top: 10px;
+  }
+
+  .score-bar {
+    flex: 1;
+    border-radius: 2px;
+    background: var(--border);
+    transition: height 0.4s ease, background 0.4s ease;
+    min-height: 4px;
+  }
+
+  /* Category sections */
+  .category { margin-bottom: 28px; }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cat-name {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .cat-line { flex: 1; height: 1px; background: var(--border); }
+  .cat-avg { font-size: 13px; color: var(--text-dim); font-weight: 400; }
+
+  /* Carousel */
+  .carousel-wrap {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .carousel-slide {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    box-sizing: border-box;
+  }
+
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slide-header-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .slide-header-title {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .slide-header-avg {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .slide-counter {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'Google Sans', sans-serif;
+    margin-bottom: 4px;
+  }
+
+  /* Carousel nav */
+  .carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .cnav-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+    padding-bottom: 3px;
+  }
+
+  .cnav-btn:hover { background: rgba(66,133,244,0.1); border-color: var(--g-blue); }
+  .cnav-btn:disabled { opacity: 0.3; cursor: default; }
+  .cnav-btn:disabled:hover { background: var(--card); border-color: var(--border); }
+
+  .cnav-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .cnav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .cnav-dot.active {
+    width: 24px;
+    border-radius: 100px;
+    background: var(--g-blue);
+  }
+
+  /* Dimension cards */
+  .dim-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 6px;
+    transition: border-color 0.2s;
+  }
+
+  .dim-card:hover { border-color: var(--border-hover); }
+
+  .dim-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .dim-name {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .dim-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 300;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  .dim-score-display {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    transition: color 0.3s;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .dim-score-display.rated { color: var(--g-blue); }
+
+  /* Slider */
+  .dim-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .dim-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--g-blue);
+    cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(66,133,244,0.2);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .dim-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 6px rgba(66,133,244,0.2);
+    transform: scale(1.15);
+  }
+
+  .dim-slider::-moz-range-thumb {
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    background: var(--g-blue);
+    border: none;
+    cursor: pointer;
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+
+  .slider-labels span {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Reflection section ── */
+  .reflection-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .reflection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .reflection-header:hover { background: rgba(66,133,244,0.05); }
+
+  .reflection-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .reflection-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--g-blue-dim);
+    border: 1px solid var(--g-blue-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .reflection-title {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .reflection-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 300;
+    margin-top: 2px;
+  }
+
+  .reflection-chevron {
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+
+  .reflection-chevron.open { transform: rotate(180deg); }
+
+  .reflection-body {
+    display: none;
+    padding: 20px;
+  }
+
+  .reflection-body.open { display: block; }
+
+  .ref-dim-row {
+    margin-bottom: 16px;
+  }
+
+  .ref-dim-row:last-child { margin-bottom: 0; }
+
+  .ref-dim-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .ref-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .ref-dim-name {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .ref-score-chip {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 100px;
+    margin-left: auto;
+  }
+
+  .ref-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    padding: 10px 14px;
+    resize: none;
+    height: 60px;
+    line-height: 1.5;
+    transition: border-color 0.2s, height 0.2s;
+    outline: none;
+  }
+
+  .ref-textarea::placeholder { color: var(--text-dim); }
+  .ref-textarea:focus {
+    border-color: var(--g-blue-mid);
+    height: 80px;
+  }
+
+  /* Pillar summary textarea */
+  .pillar-ref-section {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+
+  .pillar-ref-label {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  /* Overall reflection */
+  .overall-reflection {
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .overall-reflection.reflect-card {
+    background: linear-gradient(135deg, #0f1a2e 0%, #111d30 100%);
+    border: 1px solid rgba(66,133,244,0.35);
+    box-shadow: 0 0 0 1px rgba(66,133,244,0.08), inset 0 1px 0 rgba(66,133,244,0.1);
+  }
+
+  .overall-reflection.focus-card {
+    background: linear-gradient(135deg, #1a1200 0%, #1c1500 100%);
+    border: 1px solid rgba(251,188,4,0.35);
+    box-shadow: 0 0 0 1px rgba(251,188,4,0.08), inset 0 1px 0 rgba(251,188,4,0.1);
+  }
+
+  .overall-ref-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .overall-reflection.reflect-card .overall-ref-header {
+    border-bottom: 1px solid rgba(66,133,244,0.2);
+  }
+
+  .overall-reflection.focus-card .overall-ref-header {
+    border-bottom: 1px solid rgba(251,188,4,0.2);
+  }
+
+  .overall-ref-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .reflect-card .overall-ref-icon {
+    background: rgba(66,133,244,0.15);
+    border: 1px solid rgba(66,133,244,0.4);
+  }
+
+  .focus-card .overall-ref-icon {
+    background: rgba(251,188,4,0.15);
+    border: 1px solid rgba(251,188,4,0.4);
+  }
+
+  .overall-ref-body { padding: 16px 20px; }
+
+  .overall-ref-textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    padding: 12px 14px;
+    resize: none;
+    height: 90px;
+    line-height: 1.6;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .reflect-card .overall-ref-textarea {
+    border: 1px solid rgba(66,133,244,0.25);
+  }
+
+  .reflect-card .overall-ref-textarea:focus {
+    border-color: rgba(66,133,244,0.6);
+  }
+
+  .focus-card .overall-ref-textarea {
+    border: 1px solid rgba(251,188,4,0.25);
+  }
+
+  .focus-card .overall-ref-textarea:focus {
+    border-color: rgba(251,188,4,0.6);
+  }
+
+  .overall-ref-textarea::placeholder { color: var(--text-dim); }
+
+  /* Focus areas */
+  .focus-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .focus-chip {
+    background: transparent;
+    border: 1px dashed var(--border-hover);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Google Sans', sans-serif;
+    white-space: nowrap;
+  }
+
+  .focus-chip:hover { border-color: var(--g-blue-mid); color: var(--g-blue); }
+  .focus-chip.selected { background: var(--g-blue-dim); border-color: var(--g-blue); border-style: solid; color: var(--g-blue); }
+
+  .focus-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 300;
+  }
+
+  /* Actions */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 36px;
+  }
+
+  .btn-save {
+    flex: 1;
+    background: var(--g-blue);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 15px 24px;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(66,133,244,0.3);
+  }
+
+  .btn-save:hover { opacity: 0.9; box-shadow: 0 4px 20px rgba(66,133,244,0.45); }
+  .btn-save:active { transform: scale(0.98); }
+
+  .btn-history {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 15px 18px;
+    color: var(--text-muted);
+    font-family: 'Google Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-history:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* History */
+  .history-panel { display: none; margin-top: 48px; }
+  .history-panel.open { display: block; }
+
+  .history-title {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: 0.2px;
+  }
+
+  .history-week {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+  }
+
+  .hw-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .hw-week { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-family: 'Google Sans', sans-serif; }
+
+  .hw-score {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--g-blue);
+    line-height: 1;
+  }
+
+  .hw-score-label { font-size: 10px; color: var(--text-dim); text-align: right; }
+
+  .hw-bars {
+    display: flex;
+    gap: 3px;
+    height: 36px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+
+  .hw-bar {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    min-height: 4px;
+    opacity: 0.65;
+    transition: opacity 0.2s;
+  }
+
+  .hw-bar:hover { opacity: 1; }
+
+  .hw-focus { font-size: 12px; color: var(--text-dim); font-weight: 300; font-style: italic; }
+  .hw-focus strong { color: var(--text-muted); font-style: normal; font-weight: 500; }
+
+  .hw-del {
+    background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 13px; padding: 4px;
+    transition: color 0.2s; flex-shrink: 0;
+  }
+  .hw-del:hover { color: var(--g-red); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--g-blue);
+    color: #fff;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 12px 22px;
+    border-radius: 100px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(66,133,244,0.4);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .trend-row {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .trend-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    font-family: 'Google Sans', sans-serif;
+  }
+
+  .trend-svg { width: 100%; height: 60px; overflow: visible; }
+
+  /* Summary modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: #161b27;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(24px) scale(0.97);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .modal-overlay.show .modal { transform: translateY(0) scale(1); }
+
+  .modal-top {
+    background: linear-gradient(135deg, #0f1a2e, #101820);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 22px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .modal-ring-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+
+  .modal-ring-svg { width: 72px; height: 72px; transform: rotate(-90deg); }
+  .modal-ring-track { fill: none; stroke: var(--border); stroke-width: 6; }
+  .modal-ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 204; }
+
+  .modal-ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  .modal-ring-num {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 20px; font-weight: 700; line-height: 1;
+  }
+
+  .modal-ring-denom { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; }
+
+  .modal-head-text .modal-week {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted); font-family: 'Google Sans', sans-serif; margin-bottom: 4px;
+  }
+
+  .modal-head-text .modal-label {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 22px; font-weight: 700; color: #fff; line-height: 1.1;
+  }
+
+  .modal-head-text .modal-date { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  .modal-body { padding: 18px 22px 4px; }
+
+  .modal-section { margin-bottom: 14px; border-radius: 10px; overflow: hidden; }
+
+  .modal-section-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 14px;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
+
+  .modal-section.ms-reflect .modal-section-header {
+    background: rgba(66,133,244,0.13); color: #7ab3f7;
+    border-bottom: 1px solid rgba(66,133,244,0.2);
+  }
+
+  .modal-section.ms-focus .modal-section-header {
+    background: rgba(251,188,4,0.13); color: #FBBC04;
+    border-bottom: 1px solid rgba(251,188,4,0.2);
+  }
+
+  .modal-section.ms-weak .modal-section-header {
+    background: rgba(234,67,53,0.13); color: #f87c72;
+    border-bottom: 1px solid rgba(234,67,53,0.2);
+  }
+
+  .modal-section-body {
+    padding: 14px 16px;
+    font-size: 16px; font-weight: 400; line-height: 1.65;
+    color: #ffffff;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    font-style: italic;
+  }
+
+  .modal-section-body.empty { color: var(--text-dim); font-style: normal; }
+
+  .weak-areas-list {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .weak-chip {
+    background: rgba(234,67,53,0.12);
+    border: 1px solid rgba(234,67,53,0.35);
+    border-radius: 100px;
+    padding: 5px 13px;
+    font-size: 13px;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 500;
+    color: #f87c72;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .weak-chip .chip-score {
+    background: rgba(234,67,53,0.2);
+    border-radius: 100px;
+    padding: 1px 7px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .modal-close-wrap { padding: 14px 22px 20px; }
+
+  .modal-close {
+    width: 100%;
+    background: var(--g-blue);
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 16px; font-weight: 500;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.2s;
+  }
+
+  .modal-close:hover { opacity: 0.88; }
+
+  @media (max-width: 480px) {
+    .actions { flex-direction: column; }
+    .wordmark { font-size: 28px; }
+  }
+
+  .cat-avgs {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .cat-avg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.2;
+  }
+
+  .cat-avg-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .cat-avg-name {
+    color: var(--text-muted);
+    font-family: 'Google Sans', sans-serif;
+    font-size: 12px;
+    flex: 1;
+  }
+
+  .cat-avg-val {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .history-week {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .history-week:hover { border-color: var(--g-blue); background: rgba(66,133,244,0.05); }</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header" style="align-items:flex-start;">
+    <div class="header-left">
+      <div class="wordmark">Good Manager Score</div>
+      <p style="margin-top:6px; color:#FBBC04; font-size:12px; font-weight:400; letter-spacing:0.3px;">Track. Reflect. Lead better.</p>
+      <button class="btn-history" onclick="openHistoryModal()" style="margin-top:8px; font-size:12px; padding:6px 12px; border-radius:8px;">History</button>
+    </div>
+    <div class="week-badge" style="flex-shrink:0;">
+      <div class="wk-label">Week</div>
+      <div class="wk-val" id="weekNum">—</div>
+      <div class="wk-label" id="weekYear" style="margin-top:2px; font-size:9px;">—</div>
+    </div>
+  </div>
+
+  <!-- Score ring (shown only on final slide) -->
+  <div class="score-ring-wrap" id="scoreRingWrap" style="display:none;">
+    <div class="score-left-col">
+      <div class="ring-container">
+        <svg class="ring-svg" viewBox="0 0 110 110">
+          <circle class="ring-track" cx="55" cy="55" r="50"/>
+          <circle class="ring-fill" id="ringFill" cx="55" cy="55" r="50"/>
+        </svg>
+        <div class="ring-text">
+          <div class="score-num" id="ringScore">0</div>
+          <div class="score-denom">/100</div>
+        </div>
+      </div>
+      <div class="score-label" id="scoreLabel">—</div>
+      <div class="score-desc" id="scoreDesc" style="display:none"></div>
+    </div>
+    <div class="score-right-col">
+      <div class="cat-avgs" id="catAvgs"></div>
+    </div>
+  </div>
+
+  <!-- Carousel nav (top) -->
+  <div class="carousel-nav" style="margin-top:0; margin-bottom:18px;">
+    <button class="cnav-btn" id="prevBtn" onclick="goSlide(currentSlide - 1)">‹</button>
+    <div class="cnav-dots" id="carouselDots"></div>
+    <button class="cnav-btn" id="nextBtn" onclick="goSlide(currentSlide + 1)">›</button>
+  </div>
+
+  <!-- Carousel -->
+  <div class="carousel-wrap">
+    <div class="carousel-track" id="carouselTrack"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions" id="saveActions" style="display:none;">
+    <button class="btn-save" onclick="saveWeek()">Save this week</button>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="summaryModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-ring-wrap">
+        <svg class="modal-ring-svg" viewBox="0 0 72 72">
+          <circle class="modal-ring-track" cx="36" cy="36" r="30"/>
+          <circle class="modal-ring-fill" id="modalRingFill" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="modal-ring-text">
+          <div class="modal-ring-num" id="modalScore">—</div>
+          <div class="modal-ring-denom">/100</div>
+        </div>
+      </div>
+      <div class="modal-head-text">
+        <div class="modal-week" id="modalWeek">—</div>
+        <div class="modal-label" id="modalLabel">—</div>
+        <div class="modal-date" id="modalDate">—</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section ms-weak">
+        <div class="modal-section-header">Needs Attention</div>
+        <div class="weak-areas-list" id="modalWeakAreas"></div>
+      </div>
+      <div class="modal-section ms-reflect">
+        <div class="modal-section-header">💭 Weekly Reflection</div>
+        <div class="modal-section-body" id="modalReflection"></div>
+      </div>
+      <div class="modal-section ms-focus">
+        <div class="modal-section-header">⚡ Focus for Next Week</div>
+        <div class="modal-section-body" id="modalFocus"></div>
+      </div>
+    </div>
+    <div class="modal-close-wrap">
+      <button class="modal-close" onclick="document.getElementById('summaryModal').classList.remove('show')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal" onclick="closeHistoryModal(event)">
+  <div class="modal" style="max-height:85vh;">
+    <div class="modal-top" style="justify-content:space-between;">
+      <div class="modal-head-text">
+        <div class="modal-week">History</div>
+        <div class="modal-label" style="font-size:18px;">Past Weeks</div>
+      </div>
+      <button onclick="document.getElementById('historyModal').classList.remove('show')" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+    <div style="padding:6px 0 0;">
+      <div class="trend-row" id="trendRow" style="display:none; margin:14px 22px 0; border-radius:10px;">
+        <div class="trend-title">Score trend</div>
+        <svg class="trend-svg" id="trendSvg"></svg>
+      </div>
+    </div>
+    <div style="padding:14px 22px 22px;" id="historyList"></div>
+  </div>
+</div>
+
+<!-- Week Detail Modal -->
+<div class="modal-overlay" id="weekDetailModal" onclick="closeWeekDetail(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-ring-wrap">
+        <svg class="modal-ring-svg" viewBox="0 0 72 72">
+          <circle class="modal-ring-track" cx="36" cy="36" r="30"/>
+          <circle class="modal-ring-fill" id="detailRingFill" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="modal-ring-text">
+          <div class="modal-ring-num" id="detailScore">—</div>
+          <div class="modal-ring-denom">/100</div>
+        </div>
+      </div>
+      <div class="modal-head-text">
+        <div class="modal-week" id="detailWeek">—</div>
+        <div class="modal-label" id="detailLabel">—</div>
+        <div class="modal-date" id="detailDate">—</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section ms-weak">
+        <div class="modal-section-header">Growth Areas</div>
+        <div class="weak-areas-list" id="detailWeakAreas"></div>
+      </div>
+      <div class="modal-section ms-reflect">
+        <div class="modal-section-header">💭 Weekly Reflection</div>
+        <div class="modal-section-body" id="detailReflection"></div>
+      </div>
+      <div class="modal-section ms-focus">
+        <div class="modal-section-header">⚡ Focus for Next Week</div>
+        <div class="modal-section-body" id="detailFocus"></div>
+      </div>
+    </div>
+    <div class="modal-close-wrap">
+      <button class="modal-close" onclick="document.getElementById('weekDetailModal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DIMENSIONS = [
+  {
+    cat: "People & Trust",
+    color: "#4285F4",
+    items: [
+      { id: "transparency", name: "Transparency", desc: "Sharing context, decisions, and reasoning openly with your team" },
+      { id: "fairness", name: "Fairness in opportunities", desc: "Equitable distribution of stretch work, visibility, and growth chances" },
+      { id: "safety", name: "Psychological safety", desc: "Team feels safe to speak up, disagree, and take risks" },
+      { id: "care", name: "Genuine care", desc: "Showing real interest in your team's wellbeing beyond work output" },
+    ]
+  },
+  {
+    cat: "Leadership & Integrity",
+    color: "#EA4335",
+    items: [
+      { id: "values", name: "Staying true to values", desc: "Decisions reflect your principles even under pressure" },
+      { id: "accountability", name: "Accountability", desc: "Owning mistakes, not deflecting blame onto others" },
+      { id: "consistency", name: "Words ↔ Actions", desc: "What you say matches what you do, consistently" },
+    ]
+  },
+  {
+    cat: "Empowerment",
+    color: "#FBBC04",
+    items: [
+      { id: "nomicro", name: "Avoiding micromanagement", desc: "Trusting people with how, not just what" },
+      { id: "delegate", name: "Effective delegation", desc: "Matching tasks to strengths, giving real ownership" },
+      { id: "develop", name: "Developing others", desc: "Actively investing in your team's growth and career" },
+    ]
+  },
+  {
+    cat: "Communication",
+    color: "#34A853",
+    items: [
+      { id: "feedback", name: "Timely honest feedback", desc: "Delivering candid feedback when it matters, not just in reviews" },
+      { id: "listening", name: "Active listening", desc: "Fully present in conversations, not just waiting to talk" },
+      { id: "clarity", name: "Clarity of direction", desc: "Team knows what matters, why, and what success looks like" },
+    ]
+  },
+  {
+    cat: "Execution",
+    color: "#4285F4",
+    items: [
+      { id: "blockers", name: "Removing blockers", desc: "Proactively clearing obstacles so your team can move fast" },
+      { id: "decisions", name: "Decision quality", desc: "Making sound, timely calls with the available information" },
+      { id: "followthrough", name: "Follow-through", desc: "Completing what you commit to, no dropped balls" },
+      { id: "output", name: "Team output / Results", desc: "Ultimately delivering outstanding, impactful results as a team" },
+    ]
+  }
+];
+
+let ratings = {};
+
+DIMENSIONS.forEach(cat => cat.items.forEach(d => { ratings[d.id] = 5; }));
+
+function getWeekNumber(d) {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getWeekKey() {
+  const now = new Date();
+  return `W${getWeekNumber(now)}-${now.getFullYear()}`;
+}
+
+function initWeekBadge() {
+  const now = new Date();
+  document.getElementById('weekNum').textContent = getWeekNumber(now);
+  document.getElementById('weekYear').textContent = now.getFullYear();
+}
+
+function calcScore() {
+  const all = DIMENSIONS.flatMap(c => c.items.map(d => ratings[d.id]));
+  return Math.round((all.reduce((a, b) => a + b, 0) / (all.length * 10)) * 100);
+}
+
+function scoreLabel(s) {
+  if (s >= 85) return { label: "Exceptional" };
+  if (s >= 70) return { label: "Strong" };
+  if (s >= 55) return { label: "Developing" };
+  if (s >= 40) return { label: "Needs Work" };
+  return { label: "Reflect Deeply" };
+}
+
+function dimColor(v) {
+  if (v >= 7) return '#34A853';
+  if (v >= 5) return '#FBBC04';
+  return '#EA4335';
+}
+
+function updateScore() {
+  const s = calcScore();
+  const circ = 2 * Math.PI * 50;
+  const offset = circ * (1 - s / 100);
+  const fill = document.getElementById('ringFill');
+  fill.style.strokeDashoffset = offset;
+  fill.style.strokeDasharray = circ;
+  document.getElementById('ringScore').textContent = s;
+
+  const col = s >= 70 ? '#34A853' : s >= 50 ? '#FBBC04' : '#EA4335';
+  fill.style.stroke = col;
+  document.getElementById('ringScore').style.color = col;
+
+  const { label } = scoreLabel(s);
+  document.getElementById('scoreLabel').textContent = label;
+  document.getElementById('scoreDesc').style.display = 'none';
+
+  // Category averages in score card
+  const catAvgsEl = document.getElementById('catAvgs');
+  if (catAvgsEl) {
+    catAvgsEl.innerHTML = DIMENSIONS.map(cat => {
+      const avg = cat.items.reduce((a, d) => a + ratings[d.id], 0) / cat.items.length;
+      const col = avg >= 7 ? '#34A853' : avg >= 5 ? '#FBBC04' : '#EA4335';
+      const shortName = cat.cat.replace(' & ', ' & ').replace('Leadership & Integrity', 'Leadership').replace('People & Trust', 'People & Trust').replace('Empowerment', 'Empowerment').replace('Communication', 'Communication').replace('Execution', 'Execution');
+      return `<div class="cat-avg-row">
+        <div class="cat-avg-dot" style="background:${cat.color}"></div>
+        <div class="cat-avg-name">${shortName}</div>
+        <div class="cat-avg-val" style="color:${col}">${avg.toFixed(1)}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── Carousel ──
+let currentSlide = 0;
+let totalSlides = 0;
+
+function buildCarousel() {
+  const track = document.getElementById('carouselTrack');
+  track.innerHTML = '';
+  totalSlides = DIMENSIONS.length + 1; // pillars + reflection slide
+
+  // Pillar slides
+  DIMENSIONS.forEach((cat, idx) => {
+    const slide = document.createElement('div');
+    slide.className = 'carousel-slide';
+
+    let cardsHtml = '';
+    cat.items.forEach(dim => {
+      cardsHtml += `
+        <div class="dim-card">
+          <div class="dim-top">
+            <div>
+              <div class="dim-name">${dim.name}</div>
+              <div class="dim-desc">${dim.desc}</div>
+            </div>
+            <div class="dim-score-display" id="dscore-${dim.id}">5</div>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="dim-slider" id="slider-${dim.id}" min="1" max="10" value="5">
+            <div class="slider-labels"><span>1 — Needs work</span><span>10 — Excellent</span></div>
+          </div>
+        </div>`;
+    });
+
+    slide.innerHTML = `
+      <div class="slide-counter">Pillar ${idx + 1} of ${DIMENSIONS.length}</div>
+      <div class="slide-header">
+        <div class="slide-header-dot" style="background:${cat.color}"></div>
+        <div class="slide-header-title">${cat.cat}</div>
+        <div class="slide-header-avg" id="slideavg-${idx}" style="color:${cat.color}">—</div>
+      </div>
+      ${cardsHtml}
+    `;
+    track.appendChild(slide);
+  });
+
+  // Reflection slide
+  const reflSlide = document.createElement('div');
+  reflSlide.className = 'carousel-slide';
+  reflSlide.innerHTML = `
+    <div class="slide-counter">Final step</div>
+    <div class="slide-header">
+      <div class="slide-header-dot" style="background:#7ab3f7"></div>
+      <div class="slide-header-title">Reflect & Plan</div>
+    </div>
+    <div class="overall-reflection reflect-card">
+      <div class="overall-ref-header">
+        <div class="overall-ref-icon">💭</div>
+        <div>
+          <div class="reflection-title" style="color:#7ab3f7;">Weekly Reflection</div>
+          <div class="reflection-subtitle">What happened this week? What will you do differently?</div>
+        </div>
+      </div>
+      <div class="overall-ref-body">
+        <textarea class="overall-ref-textarea" id="weeklyReflection" placeholder="Reflect on your week as a manager — wins, misses, and what you'd change…"></textarea>
+      </div>
+    </div>
+    <div class="overall-reflection focus-card">
+      <div class="overall-ref-header">
+        <div class="overall-ref-icon">⚡</div>
+        <div>
+          <div class="reflection-title" style="color:#FBBC04;">Focus for Next Week</div>
+          <div class="reflection-subtitle">What's the one thing you'll work on?</div>
+        </div>
+      </div>
+      <div class="overall-ref-body">
+        <textarea class="overall-ref-textarea" id="overallNote" placeholder="Write your intention for next week — one specific behaviour to improve…"></textarea>
+      </div>
+    </div>
+  `;
+  track.appendChild(reflSlide);
+
+  // Wire up sliders
+  DIMENSIONS.forEach((cat, idx) => {
+    cat.items.forEach(dim => {
+      const slider = document.getElementById(`slider-${dim.id}`);
+      const display = document.getElementById(`dscore-${dim.id}`);
+      updateSliderTrack(slider, cat.color);
+      slider.addEventListener('input', () => {
+        const v = parseInt(slider.value);
+        ratings[dim.id] = v;
+        display.textContent = v;
+        display.className = 'dim-score-display rated';
+        display.style.color = dimColor(v);
+        updateSliderTrack(slider, cat.color);
+        updateScore();
+        updateSlideAvg(idx, cat);
+      });
+    });
+    updateSlideAvg(idx, cat);
+  });
+
+  // Dots
+  const dots = document.getElementById('carouselDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'cnav-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goSlide(i);
+    dots.appendChild(dot);
+  }
+
+  setupSwipe();
+  goSlide(0);
+}
+
+function updateSlideAvg(idx, cat) {
+  const avg = cat.items.reduce((a, d) => a + ratings[d.id], 0) / cat.items.length;
+  const el = document.getElementById(`slideavg-${idx}`);
+  if (el) {
+    const col = avg >= 7 ? '#34A853' : avg >= 5 ? '#FBBC04' : '#EA4335';
+    el.textContent = `avg ${avg.toFixed(1)}`;
+    el.style.color = col;
+  }
+}
+
+function goSlide(n) {
+  if (n < 0) n = 0;
+  if (n > totalSlides - 1) n = totalSlides - 1;
+  currentSlide = n;
+  document.getElementById('carouselTrack').style.transform = `translateX(-${n * 100}%)`;
+
+  // Dots
+  document.querySelectorAll('.cnav-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === n);
+  });
+
+  // Buttons
+  document.getElementById('prevBtn').disabled = (n === 0);
+  document.getElementById('nextBtn').disabled = (n === totalSlides - 1);
+
+  // Score ring + Save button only on last slide
+  const isLast = (n === totalSlides - 1);
+  document.getElementById('saveActions').style.display = isLast ? 'flex' : 'none';
+  document.getElementById('scoreRingWrap').style.display = isLast ? 'flex' : 'none';
+  if (isLast) updateScore();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setupSwipe() {
+  const wrap = document.querySelector('.carousel-wrap');
+  let startX = 0, startY = 0, dragging = false;
+
+  wrap.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    // Only horizontal swipes (ignore vertical scroll)
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goSlide(currentSlide + 1);
+      else goSlide(currentSlide - 1);
+    }
+  }, { passive: true });
+}
+
+function updateSliderTrack(slider, catColor) {
+  const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+  const v = parseInt(slider.value);
+  const col = dimColor(v);
+  slider.style.background = `linear-gradient(to right, ${col} ${pct}%, var(--border) ${pct}%)`;
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('managerScore_history') || '[]'); } catch { return []; }
+}
+
+function saveHistory(h) {
+  localStorage.setItem('managerScore_history', JSON.stringify(h));
+}
+
+function saveWeek() {
+  const key = getWeekKey();
+  const score = calcScore();
+  const history = getHistory();
+  const existing = history.findIndex(h => h.key === key);
+  const reflection = document.getElementById('weeklyReflection').value;
+  const focus = document.getElementById('overallNote').value;
+  const entry = {
+    key,
+    date: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),
+    score,
+    ratings: { ...ratings },
+    weeklyReflection: reflection,
+    overallNote: focus,
+  };
+  if (existing >= 0) history[existing] = entry;
+  else history.unshift(entry);
+  saveHistory(history);
+  showSummaryModal(entry);
+}
+
+function showSummaryModal(w) {
+  const score = w.score, key = w.key, date = w.date, reflection = w.weeklyReflection, focus = w.overallNote;
+  const col = score >= 70 ? '#34A853' : score >= 50 ? '#FBBC04' : '#EA4335';
+  const { label } = scoreLabel(score);
+  const circ = 2 * Math.PI * 30;
+
+  document.getElementById('modalScore').textContent = score;
+  document.getElementById('modalScore').style.color = col;
+  document.getElementById('modalWeek').textContent = key;
+  document.getElementById('modalLabel').textContent = label;
+  document.getElementById('modalDate').textContent = date;
+
+  const fill = document.getElementById('modalRingFill');
+  fill.style.stroke = col;
+  fill.style.strokeDasharray = circ;
+  fill.style.strokeDashoffset = circ * (1 - score / 100);
+
+  const allItems = DIMENSIONS.flatMap(c => c.items);
+  const weak = allItems.filter(d => (w.ratings[d.id] || 5) <= 5).sort((a, b) => (w.ratings[a.id]||5) - (w.ratings[b.id]||5));
+  const weakWrap = document.getElementById('modalWeakAreas');
+  weakWrap.innerHTML = weak.length === 0
+    ? '<span style="font-size:14px;color:var(--text-muted);font-style:italic;">No areas scoring 5 or below 🎉</span>'
+    : weak.map(d => `<div class="weak-chip">${d.name}<span class="chip-score">${w.ratings[d.id]}</span></div>`).join('');
+
+  const reflEl = document.getElementById('modalReflection');
+  reflEl.textContent = reflection || 'No reflection written.';
+  reflEl.className = 'modal-section-body' + (reflection ? '' : ' empty');
+
+  const focusEl = document.getElementById('modalFocus');
+  focusEl.textContent = focus || 'No focus set.';
+  focusEl.className = 'modal-section-body' + (focus ? '' : ' empty');
+
+  document.getElementById('summaryModal').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('summaryModal')) {
+    document.getElementById('summaryModal').classList.remove('show');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function openHistoryModal() {
+  renderHistory();
+  document.getElementById('historyModal').classList.add('show');
+}
+
+function closeHistoryModal(e) {
+  if (e.target === document.getElementById('historyModal')) {
+    document.getElementById('historyModal').classList.remove('show');
+  }
+}
+
+function closeWeekDetail(e) {
+  if (e.target === document.getElementById('weekDetailModal')) {
+    document.getElementById('weekDetailModal').classList.remove('show');
+  }
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const list = document.getElementById('historyList');
+  const trendRow = document.getElementById('trendRow');
+  list.innerHTML = '';
+
+  if (history.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:14px;text-align:center;padding:32px 0;">No weeks saved yet. Rate yourself and hit Save.</div>';
+    trendRow.style.display = 'none';
+    return;
+  }
+
+  if (history.length >= 2) {
+    trendRow.style.display = 'block';
+    renderTrend(history.slice(0, 10).reverse());
+  }
+
+  history.forEach(w => {
+    const col = w.score >= 70 ? '#34A853' : w.score >= 50 ? '#FBBC04' : '#EA4335';
+    const { label } = scoreLabel(w.score);
+    const barHtml = DIMENSIONS.flatMap(cat => cat.items.map(d => {
+      const v = w.ratings[d.id] || 5;
+      const h = Math.max(4, (v / 10) * 28);
+      return `<div class="hw-bar" style="height:${h}px; background:${cat.color};" title="${d.name}: ${v}/10"></div>`;
+    })).join('');
+
+    const hw = document.createElement('div');
+    hw.className = 'history-week';
+    hw.onclick = () => showWeekDetail(w);
+    hw.innerHTML = `
+      <div class="hw-top">
+        <div style="flex:1;">
+          <div class="hw-week">${w.key} · ${w.date}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <span style="font-family:'Google Sans Display',sans-serif;font-size:26px;font-weight:700;color:${col};line-height:1;">${w.score}</span>
+            <span style="font-size:11px;color:var(--text-dim);">/100</span>
+            <span style="font-size:13px;color:${col};font-family:'Google Sans',sans-serif;font-weight:500;">${label}</span>
+          </div>
+        </div>
+        <button class="hw-del" onclick="event.stopPropagation();deleteWeek('${w.key}')" title="Delete">✕</button>
+      </div>
+      <div class="hw-bars" style="margin-top:10px;">${barHtml}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--g-blue);font-family:'Google Sans',sans-serif;">Tap to view details →</div>
+    `;
+    list.appendChild(hw);
+  });
+}
+
+function showWeekDetail(w) {
+  const col = w.score >= 70 ? '#34A853' : w.score >= 50 ? '#FBBC04' : '#EA4335';
+  const { label } = scoreLabel(w.score);
+  const circ = 2 * Math.PI * 30;
+
+  document.getElementById('detailScore').textContent = w.score;
+  document.getElementById('detailScore').style.color = col;
+  document.getElementById('detailWeek').textContent = w.key;
+  document.getElementById('detailLabel').textContent = label;
+  document.getElementById('detailDate').textContent = w.date;
+
+  const fill = document.getElementById('detailRingFill');
+  fill.style.stroke = col;
+  fill.style.strokeDasharray = circ;
+  fill.style.strokeDashoffset = circ * (1 - w.score / 100);
+
+  const allItems = DIMENSIONS.flatMap(c => c.items);
+  const weak = allItems.filter(d => (w.ratings[d.id] || 5) <= 5).sort((a, b) => (w.ratings[a.id]||5) - (w.ratings[b.id]||5));
+  const weakWrap = document.getElementById('detailWeakAreas');
+  weakWrap.innerHTML = weak.length === 0
+    ? '<span style="font-size:14px;color:var(--text-muted);font-style:italic;">No areas scoring 5 or below 🎉</span>'
+    : weak.map(d => `<div class="weak-chip">${d.name}<span class="chip-score">${w.ratings[d.id]}</span></div>`).join('');
+
+  const reflEl = document.getElementById('detailReflection');
+  reflEl.textContent = w.weeklyReflection || 'No reflection written.';
+  reflEl.className = 'modal-section-body' + (w.weeklyReflection ? '' : ' empty');
+
+  const focusEl = document.getElementById('detailFocus');
+  focusEl.textContent = w.overallNote || 'No focus set.';
+  focusEl.className = 'modal-section-body' + (w.overallNote ? '' : ' empty');
+
+  document.getElementById('weekDetailModal').classList.add('show');
+}
+
+function renderTrend(weeks) {
+  const svg = document.getElementById('trendSvg');
+  const scores = weeks.map(w => w.score);
+  const min = Math.max(0, Math.min(...scores) - 10);
+  const max = Math.min(100, Math.max(...scores) + 10);
+  const W = 700, H = 55;
+  const pts = scores.map((s, i) => {
+    const x = scores.length === 1 ? W/2 : (i / (scores.length - 1)) * W;
+    const y = H - ((s - min) / (max - min || 1)) * H;
+    return [x, y];
+  });
+
+  const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+  const dots = pts.map((p, i) => {
+    const col = scores[i] >= 70 ? '#34A853' : scores[i] >= 50 ? '#FBBC04' : '#EA4335';
+    return `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${col}"/>`;
+  }).join('');
+  const labels = pts.map((p, i) => `<text x="${p[0]}" y="${H + 14}" text-anchor="middle" fill="#3d4659" font-size="9" font-family="Google Sans, sans-serif">${weeks[i].key}</text>`).join('');
+
+  svg.innerHTML = `
+    <path d="${path}" fill="none" stroke="#4285F4" stroke-width="2" stroke-linejoin="round" opacity="0.6"/>
+    ${dots}
+    ${labels}
+  `;
+}
+
+function deleteWeek(key) {
+  const history = getHistory().filter(h => h.key !== key);
+  saveHistory(history);
+  renderHistory();
+  showToast('Week removed');
+}
+
+function loadCurrentWeek() {
+  const key = getWeekKey();
+  const history = getHistory();
+  const existing = history.find(h => h.key === key);
+  if (!existing) return;
+
+  Object.assign(ratings, existing.ratings);
+
+  DIMENSIONS.forEach(cat => cat.items.forEach(dim => {
+    const slider = document.getElementById(`slider-${dim.id}`);
+    const display = document.getElementById(`dscore-${dim.id}`);
+    if (slider) {
+      slider.value = ratings[dim.id];
+      display.textContent = ratings[dim.id];
+      display.className = 'dim-score-display rated';
+      display.style.color = dimColor(ratings[dim.id]);
+      updateSliderTrack(slider, cat.color);
+    }
+  }));
+
+  const reflEl = document.getElementById('weeklyReflection');
+  if (reflEl && existing.weeklyReflection) reflEl.value = existing.weeklyReflection;
+
+  const overallEl = document.getElementById('overallNote');
+  if (overallEl && existing.overallNote) overallEl.value = existing.overallNote;
+
+  DIMENSIONS.forEach((cat, idx) => updateSlideAvg(idx, cat));
+}
+
+// Boot
+initWeekBadge();
+buildCarousel();
+setTimeout(() => {
+  updateScore();
+  loadCurrentWeek();
+  updateScore();
+}, 50);
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('GMS: SW registered'))
+    .catch(err => console.warn('GMS: SW failed', err));
+}
+</script>
+</body>
+</html>
